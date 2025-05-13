@@ -75,13 +75,15 @@ SELECT
 	, ps.AdmittedDate
 	, ps.Tariff
 	, COUNT(*) OVER () AS TotalCount
---	, COUNT(*) OVER (PARTITION BY ps.Hospital) AS HospitalCount -- create a window over those rows with the same hospital as the current row
---	, COUNT(*) OVER (PARTITION BY ps.Ward) AS WardCount
---	, COUNT(*) OVER (PARTITION BY ps.Hospital , ps.Ward) AS HospitalWardCount
+	, COUNT(*) OVER (PARTITION BY ps.Hospital) AS HospitalCount -- create a window over those rows with the same hospital as the current row
+	, COUNT(*) OVER (PARTITION BY ps.Ward) AS WardCount
+	, COUNT(*) OVER (PARTITION BY ps.Hospital , ps.Ward) AS HospitalWardCount
 FROM
 	PatientStay ps
 ORDER BY
-	ps.PatientId;
+	--ps.PatientId;
+	ps.Hospital,
+	ps.Ward
 
 /*
 Use case: percentage of all rows in result set and percentage of a group 
@@ -91,10 +93,10 @@ SELECT
 	ps.PatientId
 	, ps.Tariff
 	, ps.Ward
-	, SUM(ps.Tariff) OVER () AS TotalTariff
---	, SUM(ps.Tariff) OVER (PARTITION BY ps.Ward) AS WardTariff
---	, 100.0 * ps.Tariff / SUM(ps.Tariff) OVER () AS PctOfAllTariff
---	, 100.0 * ps.Tariff / SUM(ps.Tariff) OVER (PARTITION BY ps.Ward) AS PctOfWardTariff
+	, SUM(ps.Tariff) OVER () AS TotalTariff --Over tells us that its a window function
+	, SUM(ps.Tariff) OVER (PARTITION BY ps.Ward) AS WardTariff
+	, 100.0 * ps.Tariff / SUM(ps.Tariff) OVER () AS PctOfAllTariff
+	, 100.0 * ps.Tariff / SUM(ps.Tariff) OVER (PARTITION BY ps.Ward) AS PctOfWardTariff
 FROM
 	PatientStay ps
 ORDER BY
@@ -114,8 +116,8 @@ SELECT
 	, ps.AdmittedDate
 	, ps.Tariff
 	, ROW_NUMBER() OVER (ORDER BY ps.PatientId) AS PatientIndex
---	, ROW_NUMBER() OVER (PARTITION BY ps.Hospital ORDER BY ps.PatientId) AS PatientByHospitalIndex
---  ,COUNT(*) OVER (PARTITION BY ps.Hospital order by ps.PatientId)  as PatientByHospitalIndexAlt -- An alternative way of indexing
+	, ROW_NUMBER() OVER (PARTITION BY ps.Hospital ORDER BY ps.PatientId) AS PatientByHospitalIndex
+ 	,COUNT(*) OVER (PARTITION BY ps.Hospital order by ps.PatientId)  as PatientByHospitalIndexAlt -- An alternative way of indexing
 FROM
 	PatientStay ps
 ORDER BY
@@ -134,9 +136,9 @@ SELECT
 	ps.PatientId
 	, ps.Tariff
 	, ROW_NUMBER() OVER (ORDER BY ps.Tariff DESC) AS PatientRowIndex
---	, RANK() OVER (	ORDER BY ps.Tariff DESC) AS PatientRank
---	, DENSE_RANK() OVER (ORDER BY ps.Tariff DESC) AS PatientDenseRank
---	, NTILE(10) OVER (ORDER BY ps.Tariff DESC) AS PatientIdDecile
+	, RANK() OVER (	ORDER BY ps.Tariff DESC) AS PatientRank
+	, DENSE_RANK() OVER (ORDER BY ps.Tariff DESC) AS PatientDenseRank --group same tariff
+	, NTILE(10) OVER (ORDER BY ps.Tariff DESC) AS PatientIdDecile
 FROM
 	PatientStay ps
 ORDER BY
